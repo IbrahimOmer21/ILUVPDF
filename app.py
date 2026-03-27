@@ -1,8 +1,10 @@
 from flask import send_file,Flask,render_template, Flask, request, redirect, url_for
 import os
 from pdf2docx import Converter
+from docx2pdf import convert
+import pythoncom
+pythoncom.CoInitialize()
 
-import pdf2docx
 
 app= Flask(__name__)
 
@@ -39,22 +41,32 @@ def upload_files():
 
 @app.route('/convert_pdfs', methods= ['GET','POST'])
 def convert_pdfs():
-    print('inside the function')
     uploaded_file= request.files.get('file')
 
     if uploaded_file.filename!="":
-        print("inside the if statement")
         path1 = os.path.join(app.config['UPLOAD_FOLDER'],uploaded_file.filename)
         uploaded_file.save(path1)
 
-    outputh_path= os.path.join(app.config['UPLOAD_FOLDER'],uploaded_file.filename)
-    print("after the if statement")
+    output_path= os.path.join(app.config['UPLOAD_FOLDER'],"converted.docx")
     cv = Converter(path1)
-    cv.convert(outputh_path)
+    cv.convert(output_path)
 
     cv.close()
-    return send_file(outputh_path, as_attachment=True, download_name='converted.docx')
+    return send_file(output_path, as_attachment=True, download_name='converted.docx')
 
+@app.route('/convert_docx', methods = ['GET','POST'])
+def convert_docx():
+    import subprocess
+    uploaded_file=request.files.get('file')
+
+    if uploaded_file.filename!='':
+        path = os.path.join(app.config['UPLOAD_FOLDER'],uploaded_file.filename)
+        uploaded_file.save(path)
+
+    outputpath = os.path.join(app.config['UPLOAD_FOLDER'], "converted.pdf")
+    subprocess.run(['soffice', '--headless', '--convert-to', 'pdf', path, '--outdir', app.config['UPLOAD_FOLDER']])
+    convert(path, outputpath)
+    return send_file(outputpath, as_attachment=True, download_name='converted.pdf')
 
 if __name__=="__main__":
     app.run(debug=True)
