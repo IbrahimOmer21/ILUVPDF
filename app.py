@@ -1,6 +1,6 @@
 from flask import send_file,Flask,render_template, Flask, request, redirect, url_for
-import PyPDF2 as pydf
 import os
+from pdf2docx import Converter
 
 import pdf2docx
 
@@ -36,6 +36,24 @@ def upload_files():
 
     return send_file(output_path, as_attachment=True)
 
+
+@app.route('/convert_pdfs', methods= ['GET','POST'])
+def convert_pdfs():
+    print('inside the function')
+    uploaded_file= request.files.get('file')
+
+    if uploaded_file.filename!="":
+        print("inside the if statement")
+        path1 = os.path.join(app.config['UPLOAD_FOLDER'],uploaded_file.filename)
+        uploaded_file.save(path1)
+
+    outputh_path= os.path.join(app.config['UPLOAD_FOLDER'],uploaded_file.filename)
+    print("after the if statement")
+    cv = Converter(path1)
+    cv.convert(outputh_path)
+
+    cv.close()
+    return send_file(outputh_path, as_attachment=True, download_name='converted.docx')
 
 
 if __name__=="__main__":
